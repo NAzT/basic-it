@@ -1,4 +1,6 @@
 const functions = require('firebase-functions');
+const axios = require('axios')
+const qs = require('qs');
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -8,16 +10,27 @@ const functions = require('firebase-functions');
 // });
 
 
-const moment = require('moment');
+const moment = require('moment-timezone');
 const cors = require('cors')({origin: true});
 
 // [START trigger]
-exports.date = functions.https.onRequest((req, res) => {
+exports.mfu = functions.https.onRequest((req, res) => {
 // [END trigger]
   // [START sendError]
   // Forbidding PUT requests.
   if (req.method === 'PUT') {
     res.status(403).send('Forbidden!');
+  }
+  else if (req.method === 'POST') {
+    console.log(typeof req.body)
+    axios({
+      method: 'post',
+      url: 'http://archive.cmmakerclub.com/accept-post.php',
+      data: qs.stringify(req.body)
+    })
+    .then(function (response) {
+      console.log(response);
+    })
   }
   // [END sendError]
 
@@ -35,10 +48,12 @@ exports.date = functions.https.onRequest((req, res) => {
       format = req.body.format;
       // [END readBodyParam]
     }
-    // [START sendResponse]
-    const formattedDate = moment().format(format);
+    // [START sendResponse] 
+    const formattedDate = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+    const responseJson = { date: formattedDate, body: req.body }
+
     console.log('Sending Formatted date:', formattedDate);
-    res.status(200).send(formattedDate);
+    res.status(200).send(JSON.stringify(responseJson));
     // [END sendResponse]
   });
 });
